@@ -1,0 +1,14 @@
+certifi
+click
+filetype
+Flask
+Flask-FontAwesome
+hurry.filesize
+itsdangerous
+Jinja2
+MarkupSafe
+Pillow
+Werkzeug
+boto3
+cryptography
+uwsgi

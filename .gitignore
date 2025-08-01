@@ -1,0 +1,15 @@
+# ignore all logs
+*.log
+varlogapis*
+
+# ignore virtual env
+venv
+
+# ignore old files
+*.old
+
+# ignore vscode
+.vscode
+
+# ignore all caches
+**/__pycache__
