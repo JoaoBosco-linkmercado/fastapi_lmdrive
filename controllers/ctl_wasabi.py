@@ -29,10 +29,10 @@ class Wasabi(object):
 
     bucket_root = 'linkm'
     
-    def __init__(self, root:str=None):
+    def __init__(self, root:str=""):
         self.root = root
         self.root_dir = ensure_folder_ends(self.root)
-        self.client_policy_name =f"{self.root}-ÁreaDoCliente" if self.root else None
+        self.client_policy_name =f"{self.root}-ÁreaDoCliente" if '/ÁreaDoCliente/' not in self.root_dir else None
         self.iam = IAM
         self.s3 = S3
         
@@ -42,6 +42,8 @@ class Wasabi(object):
             dirlist = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root)
             if not dirlist:
                 dal_wasabi.put_object(self.s3, bucket_name=self.bucket_root, key_name=self.root_dir)
+                if '/ÁreaDoCliente/' not in self.root_dir:
+                    self.create_folder('ÁreaDoCliente/')
 
     def list_folder(self, folder_name:str) -> list:
         lista = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root, folder_name=ensure_folder_ends(folder_name))
