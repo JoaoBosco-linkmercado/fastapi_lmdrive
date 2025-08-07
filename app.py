@@ -25,6 +25,9 @@ first_request = True
 
 currentDirectory = ""
 
+"FASTAPI DEPLOY https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu#step-6-testing-gunicorn-s-ability-to-serve-the-project"
+
+
 tp_dict = {'image': [['png', "jpg", 'svg'],  'fa fa-file-image'],
            'audio': [[ 'mp3', "wav", "ogg", "mpeg", "aac", "3gpp", "3gpp2", "aiff", "x-aiff", "amr", "mpga"], 'fa fa-file-audio'], 
            'video': [['mp4', "webm", "opgg", 'flv'], 'fa fa-file-video'],
@@ -72,7 +75,9 @@ def getDirList(curDir:str):
             temp_dir = {}
             temp_dir['f'] = i['name'][0:maxFileNameLength]+dots
             temp_dir['f_url'] = i['obj']
+            temp_dir['filetype'] = ''
             temp_dir['currentDir'] = curDir
+            temp_dir['system'] = i.get('system',False)
             temp_dir['isdir'] = i.get('isdir',False)
             temp_dir['icon'] = 'fa fa-folder'
             temp_dir['user'] = i.get('user','')
@@ -102,8 +107,10 @@ def getDirList(curDir:str):
                 dots = ""
             temp_file = {}
             temp_file['f'] = i['name'][0:maxFileNameLength]+dots
+            temp_file['filetype'] = i['type']
             temp_file['f_url'] = i['obj']
             temp_file['currentDir'] = curDir
+            temp_file['system'] = i.get('system',False)
             temp_file['isdir'] = i.get('isdir',False)
             temp_file['icon'] = icon
             temp_file['user'] = i.get('user','')
@@ -128,9 +135,14 @@ def sort_structure(all_dir:list) -> list:
             all_dir = sorted(all_dir, key=lambda x: x['f'].lower(), reverse=True)
     elif sort_by_selected == 1:
         if sort_order == 0:
+            all_dir = sorted(all_dir, key=lambda x: x['filetype'])
+        else:
+            all_dir = sorted(all_dir, key=lambda x: x['filetype'], reverse=True)
+    elif sort_by_selected == 2:
+        if sort_order == 0:
             all_dir = sorted(all_dir, key=lambda x: x['dtm_b'])
         else:
-            all_dir = sorted(all_dir, key=lambda x: x['dtm_b'], reverse=True)     
+            all_dir = sorted(all_dir, key=lambda x: x['dtm_b'], reverse=True)    
     else:
         if sort_order == 0:
             all_dir = sorted(all_dir, key=lambda x: x['size_b'])
@@ -218,10 +230,12 @@ def toggleSort():
     sort_order = session.get('sort_order',0)
     if coluna == "name":
         sort_by_selected = 0
-    elif coluna == "data":
+    elif coluna == "filetype":
         sort_by_selected = 1
-    else:
+    elif coluna == "data":
         sort_by_selected = 2
+    else:
+        sort_by_selected = 3
     if sort_order == 0:
         sort_order = 1
     else:
@@ -258,7 +272,7 @@ def rename(var):
     old_name = var
     new_name = request.args.get('name',"")
     obj = request.args.get('obj',"")
-    if new_name and obj and old_name != "ÁreaDoCliente":
+    if new_name and obj and old_name not in ctl_wasabi.diretorios_sistema:
         if obj == "folder":
             moveu = ctl_wasabi.Wasabi(session['login']).move_folder(old_name,old_name.replace(directory_path.name, new_name))
         elif obj == "file":
@@ -277,7 +291,7 @@ def filePage(var=""):
     breadcrumb = list()
     dir_content = getDirList(var)
     cList = '' if not var else var[:-1].split('/') if var.endswith('/') else var.split('/')
-    home_page = "Área do Cliente" if "ÁreaDoCliente" in session['login'] else "Home"
+    home_page = "Área do Cliente" if "Área do Cliente" in session['login'] else "Home"
     breadcrumb.append(['/files/', home_page, '/'])
     cPath = ""
     for c in cList:

@@ -58,9 +58,8 @@
 </div>
 
 
-
-
-<div id="view1_container" class="container table-responsive d-flex flex-row flex-wrap align-items-center" style="gap: 10px">
+<!-- <div id="view1_container" class="container table-responsive d-flex flex-row flex-wrap align-items-center" style="gap: 10px"> -->
+<div id="view1_container" class="container table-responsive d-flex flex-row flex-wrap align-items-center pb-5 pt-5" style="gap: 10px">
     <button id="show-form-adddir"  class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;"> 
         <i class="fa fa-plus"></i> Diretório
     </button>
@@ -92,12 +91,16 @@
     <button type="button" style="display: none;align-items: center;" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#confirmationModal" data-bs-pergunta="Confirma o download do diretório {{currentDir}} ?" data-bs-href="/downloadFolder/{{currentDir}}">
             <i class="fa fa-download"></i> Download diretório
     </button>
-    <table class="table align-middle table-nowrap table-hover mb-0" style="min-height: 100px;">
+    <table class="table align-middle table-nowrap table-hover mb-0"> <!-- style="min-height: 100px;"> -->
         <thead class="table-light">
             <tr>
                 <th scope="col">
                     Nome
                     <i class="fa fa-sort sort_order font-size-16 align-middle text-primary me-2" name="name"></i>
+                </th>
+                <th scope="col">
+                    Tipo
+                    <i class="fa fa-sort sort_order font-size-16 align-middle text-primary me-2" name="filetype"></i>
                 </th>
                 <th scope="col">
                     Carregado em
@@ -117,6 +120,9 @@
         {% for dir_i in all_dir %}
             <tr>
                 <td>
+                    {% if dir_i.system %}
+                    <i>
+                    {% endif %}
                     {% if dir_i.isdir %}
                         <a href="/files/{{dir_i.f_url}}" class="text-dark fw-medium" obj="{{dir_i.f_url}}" ondrop="drop(event)" ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)">
                                 <i class="fa fa-folder font-size-16 align-middle text-primary me-2" obj="{{dir_i.f_url}}"></i>
@@ -124,13 +130,18 @@
                                     <strong obj="{{dir_i.f_url}}">{{dir_i.f}}</strong> 
                                 </span>              
                         </a>
+
                     {% else %}
                         <a class="text-dark fw-medium" obj="{{dir_i.f_url}}" draggable="true" ondragstart="drag(event)">
                             <i class="{{dir_i.icon}} font-size-16 align-middle text-primary me-2" obj="{{dir_i.f_url}}"></i>
                             {{dir_i.f}}
                         </a>
                     {% endif %}
+                    {% if dir_i.system %}
+                    </i>
+                    {% endif %}
                 </td>
+                <td>{{dir_i.filetype}}</td>
                 <td>{{dir_i.dtm}}</td>
                 <td>{{dir_i.user}}</td>
                 <td>{{dir_i.size}}</td>
@@ -142,24 +153,24 @@
                         
                         <div class="dropdown-menu dropdown-menu-end">
                         {% if dir_i.isdir %}
-                            <button type="button" class="dropdown-item"  data-bs-toggle="modal" data-bs-target="#newNameModal" data-bs-href="/rename/{{dir_i.f_url[:-1]}}?obj=folder&name=">
+                            <button type="button" style='{{"pointer-events: none" if dir_i.system}}' class="dropdown-item"  data-bs-toggle="modal" data-bs-target="#newNameModal" data-bs-href="/rename/{{dir_i.f_url[:-1]}}?obj=folder&name=">
                                 Renomear
                             </button>
                             <button type="button" style="pointer-events: none" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmationModal" data-bs-pergunta="Confirma o download do diretório {{dir_i.f}} ?" data-bs-href="/downloadFolder/{{dir_i.f_url}}">
                                 Download
                             </button>                            
                             <div class="dropdown-divider"></div>
-                            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmationModal" data-bs-pergunta="Confirma a deleção do diretório {{dir_i.f}} ?" data-bs-href="/deleteFolder/{{dir_i.f_url}}">
+                            <button type="button" style='{{"pointer-events: none" if dir_i.system}}' class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmationModal" data-bs-pergunta="Confirma a deleção do diretório {{dir_i.f}} ?" data-bs-href="/deleteFolder/{{dir_i.f_url}}">
                                 Apagar
                             </button>
                         {% else %}
-                            <button type="button" class="dropdown-item"  data-bs-toggle="modal" data-bs-target="#newNameModal" data-bs-href="/rename/{{dir_i.f_url}}?obj=file&name=">
+                            <button type="button" style='{{"pointer-events: none" if dir_i.system}}' class="dropdown-item"  data-bs-toggle="modal" data-bs-target="#newNameModal" data-bs-href="/rename/{{dir_i.f_url}}?obj=file&name=">
                                 Renomear
                             </button>
                             <a class="dropdown-item" href="/download/{{dir_i.f_url}}">Download</a>
                             <!-- <a class="dropdown-item" href="#">Rename</> -->
                             <div class="dropdown-divider"></div>
-                            <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmationModal" data-bs-pergunta="Confirma a deleção do arquivo {{dir_i.f}} ?" data-bs-href="/delete/{{dir_i.f_url}}">
+                            <button type="button" style='{{"pointer-events: none" if dir_i.system}}' class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmationModal" data-bs-pergunta="Confirma a deleção do arquivo {{dir_i.f}} ?" data-bs-href="/delete/{{dir_i.f_url}}">
                             Apagar
                             </button>
                         {% endif %}

@@ -25,6 +25,14 @@ S3 = dal_wasabi.create_client('s3',
                 access_key_id = aws_access_key_id,
                 secret_access_key = aws_secret_access_key)
 
+diretorios_sistema = ['Materiais_do_Cliente/',
+                      'Materiais_do_Cliente/Fotos/',
+                      'Materiais_do_Cliente/Vídeos/',
+                      'Materiais_do_Cliente/Outros/',
+                      'Produção_da_Agência/',
+                      'Área_do_Cliente/']
+
+
 class Wasabi(object): 
 
     bucket_root = 'linkm'
@@ -32,7 +40,7 @@ class Wasabi(object):
     def __init__(self, root:str=""):
         self.root = root
         self.root_dir = ensure_folder_ends(self.root)
-        self.client_policy_name =f"{self.root}-ÁreaDoCliente" if '/ÁreaDoCliente/' not in self.root_dir else None
+        self.client_policy_name =f"{self.root}-Área_do_Cliente" if '/Área_do_Cliente/' not in self.root_dir else None
         self.iam = IAM
         self.s3 = S3
         
@@ -42,14 +50,21 @@ class Wasabi(object):
             dirlist = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root)
             if not dirlist:
                 dal_wasabi.put_object(self.s3, bucket_name=self.bucket_root, key_name=self.root_dir)
-                if '/ÁreaDoCliente/' not in self.root_dir:
-                    self.create_folder('ÁreaDoCliente/')
-
+                if '/Materiais_do_Cliente/' not in self.root_dir:
+                    self.create_folder('Materiais_do_Cliente/')
+                    self.create_folder('Materiais_do_Cliente/Fotos/')
+                    self.create_folder('Materiais_do_Cliente/Vídeos/')
+                    self.create_folder('Materiais_do_Cliente/Outros/')
+                if '/Produção_da_Agência/' not in self.root_dir:
+                    self.create_folder('Produção_da_Agência/')
+                if '/Área_do_Cliente/' not in self.root_dir:
+                    self.create_folder('Área_do_Cliente/')
     def list_folder(self, folder_name:str) -> list:
         lista = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root, folder_name=ensure_folder_ends(folder_name))
         for l in lista:
             l['user'] = dal_wasabi.get_tag(self.s3, bucket_name=self.bucket_root, file_path=l['obj'], tag_key_to_query='username') if not l['isdir'] else ''
             l['obj'] = l['obj'].replace(ensure_folder_ends(self.root),'')
+            l['system'] = l['obj'] in diretorios_sistema
         return lista
     
     def create_folder(self, subfolder_path:str):
@@ -58,15 +73,16 @@ class Wasabi(object):
 
     def delete_folder(self, subfolder_path:str):
         deletados = []
-        dir_content = self.list_folder(subfolder_path)
-        files_to_delete = [{'Key': f"{self.root}/{obj['obj']}"} for obj in dir_content if not obj.get('isdir',False)]
-        r = dal_wasabi.delete_objects(self.s3, bucket_name=self.bucket_root, del_objects=files_to_delete)
-        if r:
-            deletados.extend(r['Deleted'])
-        folders_to_delete = [{'Key': obj['obj']} for obj in dir_content if obj.get('isdir',False) and obj['obj'].startswith(subfolder_path) and obj['obj'] != subfolder_path]
-        for f in folders_to_delete:
-            deletados.append(self.delete_folder(f['Key']))
-        dal_wasabi.delete_object(self.s3, bucket_name=self.bucket_root, key_name=ensure_bucket_dir(self.root, subfolder_path))
+        if subfolder_path not in diretorios_sistema:
+            dir_content = self.list_folder(subfolder_path)
+            files_to_delete = [{'Key': f"{self.root}/{obj['obj']}"} for obj in dir_content if not obj.get('isdir',False)]
+            r = dal_wasabi.delete_objects(self.s3, bucket_name=self.bucket_root, del_objects=files_to_delete)
+            if r:
+                deletados.extend(r['Deleted'])
+            folders_to_delete = [{'Key': obj['obj']} for obj in dir_content if obj.get('isdir',False) and obj['obj'].startswith(subfolder_path) and obj['obj'] != subfolder_path]
+            for f in folders_to_delete:
+                deletados.append(self.delete_folder(f['Key']))
+            dal_wasabi.delete_object(self.s3, bucket_name=self.bucket_root, key_name=ensure_bucket_dir(self.root, subfolder_path))
         return deletados
     
     def move_folder(self, old_subfolder_path:str, new_subfolder_path:str) -> bool:
@@ -94,7 +110,7 @@ class Wasabi(object):
                 if old_file.__contains__(old_folder):
                     dal_wasabi.delete_object(s3_client=self.s3, bucket_name=self.bucket_root, key_name=old_file)
 
-        if old_subfolder_path != new_subfolder_path:
+        if old_subfolder_path != new_subfolder_path and old_subfolder_path not in diretorios_sistema:
             objects = dal_wasabi.list_objects(self.s3, bucket_name=self.bucket_root, root=self.root_dir, folder_name=old_subfolder_path)
             new_root_folder(objects, old_subfolder_path, new_subfolder_path)
             move_files(objects, old_subfolder_path, new_subfolder_path)
