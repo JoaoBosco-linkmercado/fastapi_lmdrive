@@ -1,0 +1,23 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div style="padding:100px 15px; text-align:center;">
+                <h3 class='text-muted'>Link para o Cliente</h3>
+
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" value="{{external_link}}" id="myInput" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="copyButton">
+                            <i class="fa fa-copy"></i> <!-- Bootstrap Icons clipboard icon -->
+                        </button>
+                    </div>
+
+                <div style = "margin-top:15px; margin-bottom:15px;">
+                    <a href="/" class="btn btn-info btn-lg">Home </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

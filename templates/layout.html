@@ -20,10 +20,13 @@
 </head>
 
 <body>
-  <header class="bg-primary text-white text-center py-3">
-    <div class="d-flex justify-content-between align-items-center">
+  <header class="bg-primary text-white text-center p-3">
+    <div class="d-flex justify-content-between align-items-center" style="gap: 10px">
       <h1 class="text-center flex-grow-1">{{header}}</h1>
-      <a type="sumbit" class="btn btn-secondary" href="/logout/"><i class="fa fa-close"></i></a>
+      {% if internal_user == 'Y' %}
+      <a type="sumbit" class="btn btn-info" href="/external_use/" data-bs-toggle="tooltip" title="gerar link cliente"><i class="fa fa-key"></i></a>
+      {% endif %}
+      <a type="sumbit" class="btn btn-warning" href="/logout/" data-bs-toggle="tooltip" title="sair"><i class="fa fa-close"></i></a>
     </div>
   </header>
 
@@ -83,9 +86,8 @@ confirmationModal.addEventListener('show.bs.modal', function (event) {
   var pergunta = button.getAttribute('data-bs-pergunta');
   var modalBody = confirmationModal.querySelector('.modal-body');
   modalBody.textContent = pergunta;
-  var Okhref = button.getAttribute('data-bs-href');
   var modalSim = document.getElementById('modalSimBtn');
-  modalSim.setAttribute("href", Okhref);
+  modalSim.setAttribute("href", button.getAttribute('data-bs-href'));
 })
 </script>
 
@@ -93,7 +95,6 @@ confirmationModal.addEventListener('show.bs.modal', function (event) {
     var newNameModal = document.getElementById('newNameModal');
     newNameModal.addEventListener('show.bs.modal', function (event) {
       var button = event.relatedTarget;
-      //var Okhref = button.getAttribute('data-bs-href');
       var modalTrocaBtn = document.getElementById('modalTrocaBtn');
       modalTrocaBtn.setAttribute("data-bs-href", button.getAttribute('data-bs-href'));;
     });
@@ -169,6 +170,30 @@ confirmationModal.addEventListener('show.bs.modal', function (event) {
       };
       Http.send();
   }
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+  const myInput = document.getElementById('myInput');
+  const copyButton = document.getElementById('copyButton');
+  const copyIcon = copyButton.querySelector('.fa-copy'); // Assuming Bootstrap Icons
+
+  copyButton.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(myInput.value);
+      // Optional: Change icon or show message for feedback
+      copyIcon.classList.remove('fa-copy');
+      copyIcon.classList.add('fa-check'); // Change to a checkmark icon
+      setTimeout(() => {
+        copyIcon.classList.remove('fa-check');
+        copyIcon.classList.add('fa-copy'); // Revert to clipboard icon
+      }, 2000); // Revert after 2 seconds
+    } catch (err) {
+      console.error('Copia falhou: ', err);
+      // Handle error, e.g., show an alert
+    }
+  });
+});
 </script>
 
 </body>

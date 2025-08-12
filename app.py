@@ -199,6 +199,7 @@ def loginPost(var=""):
             session['login'] = cmd[0]
             session['title'] = cmd[1]
             session['user'] = cmd[2]
+            session['internal'] = cmd[3] if len(cmd) > 3 else 'Y'
             session['sort_by_selected'] = 0
             session['sort_order'] = 0
             _wasabi = ctl_wasabi.Wasabi(session['login'])
@@ -209,9 +210,20 @@ def loginPost(var=""):
     session.pop('login', None)
     session.pop('title', None)
     session.pop('user', None)
+    session.pop('internal', None)
     session.pop('sort_by_selected', None)
     session.pop('sort_order', None)
     return render_template('blank.html')
+
+
+@app.route('/external_use/', methods=['GET'])
+@nocache
+@login_required
+def external_use():
+    key = b'5AqqPMvoZtFDilcrGCA3cIUpn10KGEBlQOcK27XD21o='
+    f = Fernet(key)
+    token = f.encrypt(f"LMDRIVE:{session['login']}/Área_do_Cliente|{session['title']}|:{session['user']}|N".encode('utf-8')).decode('utf-8')
+    return render_template('external_link.html', internal_user=session['internal'], header=session['title'], external_link=f'https://drive.linkmercado.com.br/login/{token}')
 
 
 @app.route('/logout/')
@@ -297,7 +309,7 @@ def filePage(var=""):
     for c in cList:
         cPath += f"{c}/"
         breadcrumb.append(["/files/" + cPath, c, cPath])
-    return render_template('home.html', header=session['title'], currentDir=var, breadcrumb=breadcrumb, all_dir=dir_content)
+    return render_template('home.html', internal_user=session['internal'], header=session['title'], currentDir=var, breadcrumb=breadcrumb, all_dir=dir_content)
 
 
 @app.route('/', methods=['GET'])
@@ -340,7 +352,7 @@ def deleteFile(var):
     directory_path = Path(var)
     dir = str(directory_path.parents[0]) if len(directory_path.parents) > 1 else '/'
     f = ctl_wasabi.Wasabi(session['login']).delete(bucket_dir=dir, file_name=directory_path.name)
-    return redirect('/files/'+dir)
+    return redirect('/files' + (dir if dir[0] == '/' else '/' + dir)  )
 
 
 @app.route('/downloadFolder/')
@@ -403,7 +415,7 @@ def uploadFile(var=""):
                 files_ok.append(file.filename)
             else:
                 files_nok.append(file.filename)
-    return render_template('uploadsuccess.html', header=session['title'], fileOK=files_ok, fileNOK=files_nok, href=quote("/files/"+var))
+    return render_template('uploadsuccess.html', internal_user=session['internal'], header=session['title'], fileOK=files_ok, fileNOK=files_nok, href=quote("/files/"+var))
 
 
 @app.route('/create/', methods=['GET','POST'])

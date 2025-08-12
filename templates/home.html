@@ -57,11 +57,10 @@
     </div>
 </div>
 
-
 <!-- <div id="view1_container" class="container table-responsive d-flex flex-row flex-wrap align-items-center" style="gap: 10px"> -->
 <div id="view1_container" class="container table-responsive d-flex flex-row flex-wrap align-items-center pb-5 pt-5" style="gap: 10px">
-    <button id="show-form-adddir"  class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;"> 
-        <i class="fa fa-plus"></i> Diretório
+    <button id="show-form-adddir" class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;" data-bs-toggle="tooltip" title="criar diretório"> 
+        <i class="fa fa-plus"></i>Diretório
     </button>
     <form id="form-adddir" action="/create/{{currentDir}}" method="post" class="flex-row align-items-center" style="display: none;gap: 3px;">
         <span>
@@ -74,7 +73,7 @@
         </span>
     </form>
 
-    <button id="show-form-upload" class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;"> 
+    <button id="show-form-upload" class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;" data-bs-toggle="tooltip" title="carregar arquivo"> 
         <i class="fa fa-upload"></i> Upload
     </button>
     <form id="form-upload" action="/upload/{{currentDir}}" method="post" enctype="multipart/form-data" class="flex-row align-items-center" style="display: none;gap: 3px;">
@@ -106,10 +105,12 @@
                     Carregado em
                     <i class="fa fa-sort sort_order font-size-16 align-middle text-primary me-2" name="data"></i>
                 </th>
+                {% if internal_user == 'Y' %}
                 <th scope="col">
                     Carregado por
                     <i class="fa fa-sort sort_order font-size-16 align-middle text-primary me-2" name="user"></i>
                 </th>
+                {% endif %}
                 <th scope="col" colspan="2">
                     Tamanho
                     <i class="fa fa-sort sort_order font-size-16 align-middle text-primary me-2" name="size"></i>
@@ -143,7 +144,9 @@
                 </td>
                 <td>{{dir_i.filetype}}</td>
                 <td>{{dir_i.dtm}}</td>
+                {% if internal_user == 'Y' %}
                 <td>{{dir_i.user}}</td>
+                {% endif %}
                 <td>{{dir_i.size}}</td>
                 <td>
                     <div class="dropdown">
