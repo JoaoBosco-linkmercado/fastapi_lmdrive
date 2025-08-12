@@ -177,14 +177,6 @@ def blank_page():
 @app.route('/login/<path:var>', methods=['POST'])
 def loginMethod(var=""):
     return redirect('/blank')
-    text = request.form['text']
-    if text:
-        session['login'] = text
-        session['sort_by_selected'] = 0
-        session['sort_order'] = 0
-        return redirect('/'+var)
-    else:
-        return redirect('/login/'+var)
 
 
 #@app.route('/login/', methods=['GET'])
@@ -260,6 +252,7 @@ def toggleSort():
 
 
 @app.route('/move')
+@login_required
 def move():
     _from = request.args.get('from', "")
     _to = request.args.get('to',"")
@@ -279,6 +272,7 @@ def move():
 
 
 @app.route('/rename/<path:var>', methods=['GET'])
+@login_required
 def rename(var):
     directory_path = Path(var)
     old_name = var
@@ -322,20 +316,11 @@ def homePage():
 @app.route('/download/<path:var>', defaults={"browse":False})
 @login_required
 def browseFile(var, browse):
-    #if('login' not in session):
-    #    return redirect('/login/download/'+var)
     directory_path = Path(var)
     dir = str(directory_path.parents[0]) if len(directory_path.parents) > 1 else '/'
 
     if browse:
         print("browse")
-        #wasabi.get_object(dir, directory_path.name) 
-        #from utils import is_media
-        #is_media_file = is_media(fPath)
-        #if is_media_file:
-        #    from utils import get_file
-        #    return get_file(fPath, is_media_file)
-
 
     f = ctl_wasabi.Wasabi(session['login']).get_object(dir, directory_path.name)
     byte_stream = f['Body']
@@ -382,6 +367,7 @@ def downloadFolder(var=""):
 
 @app.route('/deleteFolder/')
 @app.route('/deleteFolder/<path:var>')
+@login_required
 def deleteFolder(var=""):
     var = var.split('//')[1] if '//' in var else var
     directory_path = Path(var)
@@ -392,9 +378,6 @@ def deleteFolder(var=""):
 
 @app.errorhandler(404)
 def page_not_found(e):
-    #if('login' not in session):
-    #    return redirect('/login/')
-    # note that we set the 404 status explicitly
     return render_template('blank.html', errorCode=404, errorText='Page Not Found'), 404
 
 
@@ -403,8 +386,6 @@ def page_not_found(e):
 @login_required
 def uploadFile(var=""):
     files_ok, files_nok = list(), list()
-    #if('login' not in session):
-    #    return render_template('login.html')
     var = var.split('//')[1] if '//' in var else var
     if request.method == 'POST':
         files = request.files.getlist('files[]')
@@ -422,8 +403,6 @@ def uploadFile(var=""):
 @app.route('/create/<path:var>', methods=['GET','POST'])
 @login_required
 def createdir(var=""):
-    #if('login' not in session):
-    #    return render_template('login.html')
     var = var.split('//')[1] if '//' in var else var
     if request.method == 'POST':
         dir_name = request.form.get('dir_name')
