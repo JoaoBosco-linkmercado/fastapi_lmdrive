@@ -16,6 +16,7 @@ from controllers import ctl_wasabi
 
 app = Flask(__name__,static_url_path='')
 app.secret_key = 'LM Wasabi Drive versão 1'
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 * 1024
 
 # FoNT AWESOME
 fa = FontAwesome(app)
@@ -28,7 +29,7 @@ currentDirectory = ""
 "FASTAPI DEPLOY https://www.digitalocean.com/community/tutorials/how-to-set-up-django-with-postgres-nginx-and-gunicorn-on-ubuntu#step-6-testing-gunicorn-s-ability-to-serve-the-project"
 
 
-tp_dict = {'image': [['png', "jpg", 'svg'],  'fa fa-file-image'],
+tp_dict = {'image': [['png', "jpg", 'svg', 'jpeg', 'png', 'gif', 'bmp', 'raw'],  'fa fa-file-image'],
            'audio': [[ 'mp3', "wav", "ogg", "mpeg", "aac", "3gpp", "3gpp2", "aiff", "x-aiff", "amr", "mpga"], 'fa fa-file-audio'], 
            'video': [['mp4', "webm", "opgg", 'flv'], 'fa fa-file-video'],
            "pdf": [['pdf'], 'fa fa-file-pdf'],
@@ -39,7 +40,6 @@ tp_dict = {'image': [['png', "jpg", 'svg'],  'fa fa-file-image'],
            "compressed":[["zip", "rar", "7z"], 'fa fa-file-zip'],
            "code": [['css', 'scss', 'html', 'py', 'js', 'cpp'], 'fa fa-file-code']
            }
-
 
 def nocache(view):
     @wraps(view)
@@ -63,63 +63,68 @@ def login_required(f):
     return decorated_function
 
 
-def getDirList(curDir:str):
+def getDirList(curDir:str, listdir:list):
     global maxFileNameLength, tp_dict
-    listdir = ctl_wasabi.Wasabi(session['login']).list_folder(curDir)
     all_dir = list()
     for i in [dList for dList in listdir if dList.get('isdir',False)]:
-            if len(i.get('name')) > maxFileNameLength:
-                dots = "..."
-            else:
-                dots = ""
-            temp_dir = {}
-            temp_dir['f'] = i['name'][0:maxFileNameLength]+dots
-            temp_dir['f_url'] = i['obj']
-            temp_dir['filetype'] = ''
-            temp_dir['currentDir'] = curDir
-            temp_dir['system'] = i.get('system',False)
-            temp_dir['isdir'] = i.get('isdir',False)
-            temp_dir['icon'] = 'fa fa-folder'
-            temp_dir['user'] = i.get('user','')
-            temp_dir['dtm'] = ''
-            temp_dir['dtm_b'] = datetime(2025,1,1)
-            temp_dir['size'] = "---"
-            temp_dir['size_b'] = 0
-            if not i['name'] in ['.','..']:
-                all_dir.append(temp_dir)
+        if len(i.get('name')) > maxFileNameLength:
+            dots = "..."
+        else:
+            dots = ""
+        temp_dir = {}
+        temp_dir['f'] = i['name'][0:maxFileNameLength]+dots
+        temp_dir['f_url'] = i['obj']
+        temp_dir['filetype'] = ''
+        temp_dir['mediatype'] = ''
+        temp_dir['currentDir'] = curDir
+        temp_dir['system'] = i.get('system',False)
+        temp_dir['isdir'] = i.get('isdir',False)
+        temp_dir['icon'] = 'fa fa-folder'
+        temp_dir['user'] = i.get('user','')
+        temp_dir['dtm'] = ''
+        temp_dir['dtm_b'] = datetime(2025,1,1)
+        temp_dir['size'] = "---"
+        temp_dir['size_b'] = 0
+        if not i['name'] in ['.','..']:
+            all_dir.append(temp_dir)
 
     for i in [dList for dList in listdir if not dList.get('isdir',False)]:
-            icon = None
-            try:
-                tp = i.get('type')
-                for file_type in tp_dict.values():
-                    if tp in file_type[0]:
-                        icon = file_type[1]
-                        break
-                tp = "" if not tp else tp
-            except Exception as e:
-                pass
-            if not icon:
-                icon = 'fa fa-file'
-            if len(i.get('name')) > maxFileNameLength:
-                dots = "..."
-            else:
-                dots = ""
-            temp_file = {}
-            temp_file['f'] = i['name'][0:maxFileNameLength]+dots
-            temp_file['filetype'] = i['type']
-            temp_file['f_url'] = i['obj']
-            temp_file['currentDir'] = curDir
-            temp_file['system'] = i.get('system',False)
-            temp_file['isdir'] = i.get('isdir',False)
-            temp_file['icon'] = icon
-            temp_file['user'] = i.get('user','')
-            temp_file['dtm'] = i.get('modified', datetime.now()).strftime('%d/%m/%Y %H:%M:%S')
-            temp_file['dtm_b'] = i.get('modified', datetime.now()).replace(tzinfo=timezone.utc)
-            temp_file['size'] = "%.2fK" % (i.get('size',0) / 1024.0)
-            temp_file['size_b'] = i.get('size',0)
+        icon = None
+        mediatype = ''
+        try:
+            tp = i.get('type')
+            #for file_type in tp_dict.values():
+            for k, file_type in tp_dict.items():
+                if tp in file_type[0]:
+                    mediatype = k
+                    icon = file_type[1]
+                    break
+            tp = "" if not tp else tp
+        except Exception as e:
+            pass
+        if not icon:
+            icon = 'fa fa-file'
+        if len(i.get('name')) > maxFileNameLength:
+            dots = "..."
+        else:
+            dots = ""
+        temp_file = {}
+        filesizeK = i.get('size',0) / 1024.0
+        temp_file['f'] = i['name'][0:maxFileNameLength]+dots
+        temp_file['filetype'] = i['type']
+        temp_file['mediatype'] = mediatype
+        temp_file['f_url'] = i['obj']
+        temp_file['currentDir'] = curDir
+        temp_file['system'] = i.get('system',False)
+        temp_file['isdir'] = i.get('isdir',False)
+        temp_file['icon'] = icon
+        temp_file['user'] = i.get('user','')
+        temp_file['dtm'] = i.get('modified', datetime.now()).strftime('%d/%m/%Y %H:%M:%S')
+        temp_file['dtm_b'] = i.get('modified', datetime.now()).replace(tzinfo=timezone.utc)
+        temp_file['size'] = "%.2fK" % filesizeK if filesizeK < 1000 else "%.2fM" % (filesizeK / 1024) if (filesizeK / 1024) < 1000 else "%.2fG" % (filesizeK / 1024 / 1024)
+        temp_file['size_b'] = i.get('size',0)
 
-            all_dir.append(temp_file)
+        all_dir.append(temp_file)
     
     return sort_structure(all_dir)
 
@@ -228,6 +233,7 @@ def logoutMethod():
     session.pop('sort_order', None)
     return render_template('blank.html')
 
+
 @app.route('/changeSort')
 def toggleSort():
     coluna = request.args.get('col', "name")
@@ -295,7 +301,7 @@ def rename(var):
 @login_required
 def filePage(var=""):
     breadcrumb = list()
-    dir_content = getDirList(var)
+    dir_content = getDirList(var, ctl_wasabi.Wasabi(session['login']).list_folder(var))
     cList = '' if not var else var[:-1].split('/') if var.endswith('/') else var.split('/')
     home_page = "Área do Cliente" if "Área do Cliente" in session['login'] else "Home"
     breadcrumb.append(['/files/', home_page, '/'])
@@ -303,7 +309,28 @@ def filePage(var=""):
     for c in cList:
         cPath += f"{c}/"
         breadcrumb.append(["/files/" + cPath, c, cPath])
-    return render_template('home.html', internal_user=session['internal'], header=session['title'], currentDir=var, breadcrumb=breadcrumb, all_dir=dir_content)
+    return render_template('home.html', homepage='Y', internal_user=session['internal'], header=session['title'], currentDir=var, breadcrumb=breadcrumb, all_dir=dir_content)
+
+
+@app.route('/find/', methods=['POST'])
+@app.route('/find/<path:var>', methods=['POST'])
+@nocache
+@login_required
+def find(var=""):
+    breadcrumb = list()
+    name = request.form.get('search_name','')
+    dir_content = getDirList(var,ctl_wasabi.Wasabi(session['login']).find_file(folder_path=var, searched_name=name))
+
+    cList = '' if not var else var[:-1].split('/') if var.endswith('/') else var.split('/')
+    home_page = "Área do Cliente" if "Área do Cliente" in session['login'] else "Home"
+    breadcrumb.append(['/files/', home_page, '/'])
+    cPath = ""
+    for c in cList:
+        cPath += f"{c}/"
+        breadcrumb.append(["/files/" + cPath, c, cPath])
+    if not var:
+        var = 'Home'
+    return render_template('home.html', homepage='N', mensagem=f'Resultado da busca por <u><i>{name}</i></u> em <u><strong>{var}</strong></u>', internal_user=session['internal'], header=session['title'], currentDir="", breadcrumb=breadcrumb, all_dir=dir_content)
 
 
 @app.route('/', methods=['GET'])
@@ -312,19 +339,16 @@ def homePage():
     return redirect('/files/')
 
 
-@app.route('/browse/<path:var>', defaults={"browse":True})
-@app.route('/download/<path:var>', defaults={"browse":False})
+@app.route('/browse/<path:var>', defaults={"download":False})
+@app.route('/download/<path:var>', defaults={"download":True})
 @login_required
-def browseFile(var, browse):
+def browseFile(var, download):
     directory_path = Path(var)
     dir = str(directory_path.parents[0]) if len(directory_path.parents) > 1 else '/'
 
-    if browse:
-        print("browse")
-
     f = ctl_wasabi.Wasabi(session['login']).get_object(dir, directory_path.name)
     byte_stream = f['Body']
-    return send_file(byte_stream, as_attachment=True,
+    return send_file(byte_stream, as_attachment=download,
         download_name=directory_path.name,
         mimetype=get_mime_type(directory_path.suffix[1:]))
 
@@ -391,7 +415,7 @@ def uploadFile(var=""):
         files = request.files.getlist('files[]')
         for file in [f for f in files if f.filename != '']:
             file.filename = secure_filename(file.filename) # ensure file name is secure
-            w = ctl_wasabi.Wasabi(session['login']).put_object(bucket_dir=var, obj_name=file.filename, obj_data=file.read(), user=session['user'])
+            w = ctl_wasabi.Wasabi(session['login']).put_object(bucket_dir=var, obj_name=file.filename.rstrip(), obj_data=file.read(), user=session['user'])
             if w['ResponseMetadata']['HTTPStatusCode'] in (200,204):
                 files_ok.append(file.filename)
             else:
@@ -405,7 +429,7 @@ def uploadFile(var=""):
 def createdir(var=""):
     var = var.split('//')[1] if '//' in var else var
     if request.method == 'POST':
-        dir_name = request.form.get('dir_name')
+        dir_name = request.form.get('dir_name','').rstrip()
         ctl_wasabi.Wasabi(session['login']).create_folder(var + dir_name.replace('/','-'))
     return redirect('/files/'+var)    
 

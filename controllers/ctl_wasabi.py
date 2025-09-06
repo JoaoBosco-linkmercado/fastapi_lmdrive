@@ -1,4 +1,8 @@
 import json
+import os
+from pathlib import Path
+
+
 from dal import dal_wasabi
 
 def ensure_folder_ends(folder_name:str) -> str: 
@@ -59,6 +63,7 @@ class Wasabi(object):
                     self.create_folder('Produção_da_Agência/')
                 if '/Área_do_Cliente/' not in self.root_dir:
                     self.create_folder('Área_do_Cliente/')
+                    
     def list_folder(self, folder_name:str) -> list:
         lista = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root, folder_name=ensure_folder_ends(folder_name))
         for l in lista:
@@ -69,8 +74,9 @@ class Wasabi(object):
     
     def create_folder(self, subfolder_path:str):
         # Create an empty object with the subfolder key
-        dal_wasabi.put_object(self.s3, bucket_name=self.bucket_root, key_name=ensure_bucket_dir(self.root, subfolder_path))
-
+        if subfolder_path:
+            dal_wasabi.put_object(self.s3, bucket_name=self.bucket_root, key_name=ensure_bucket_dir(self.root, subfolder_path))
+       
     def delete_folder(self, subfolder_path:str):
         deletados = []
         if subfolder_path not in diretorios_sistema:
@@ -123,13 +129,12 @@ class Wasabi(object):
             new_file = ensure_bucket_dir(self.root, dest_subfolder_path)+filename
             if not override:
                 # já existe o destino 
-                file = dal_wasabi.get_object(s3_client=self.s3, bucket_name=self.bucket_root, bucket_dir= ensure_bucket_dir(self.root, dest_subfolder_path), filename=filename)
+                file = dal_wasabi.get_object(s3_client=self.s3, bucket_name=self.bucket_root, bucket_dir= ensure_bucket_dir(self.root, dest_subfolder_path), file_name=filename)
                 if file:
                     return False
             dal_wasabi.copy_objects(s3_client=self.s3, bucket_name_from=self.bucket_root, bucket_name_to=self.bucket_root, from_object=old_file, to_object=new_file)
             dal_wasabi.delete_object(s3_client=self.s3, bucket_name=self.bucket_root, key_name=old_file)
         return True
-
 
     def rename_file(self, subfolder_path:str, filename:str, new_filename:str, override:bool=False) -> bool:
         if filename != new_filename:
@@ -137,13 +142,43 @@ class Wasabi(object):
             new_file = ensure_bucket_dir(self.root, subfolder_path)+new_filename
             if not override:
                 # já existe o destino 
-                file = dal_wasabi.get_object(s3_client=self.s3, bucket_name=self.bucket_root, bucket_dir=ensure_bucket_dir(self.root, subfolder_path), filename=new_filename)
+                file = dal_wasabi.get_object(s3_client=self.s3, bucket_name=self.bucket_root, bucket_dir=ensure_bucket_dir(self.root, subfolder_path), file_name=new_filename)
                 if file:
                     return False
             dal_wasabi.copy_objects(s3_client=self.s3, bucket_name_from=self.bucket_root, bucket_name_to=self.bucket_root, from_object=old_file, to_object=new_file)
             dal_wasabi.delete_object(s3_client=self.s3, bucket_name=self.bucket_root, key_name=old_file)
         return True
 
+    def find_file(self, folder_path:str, searched_name:str) -> list:
+        found_objects = list()
+        objects = dal_wasabi.list_objects(self.s3, bucket_name=self.bucket_root, root=self.root_dir, folder_name=folder_path)
+        # guarda os objetos achados
+        for obj in objects['Contents']:
+            name = obj['Key'].replace(ensure_folder_ends(self.root),'')
+            if searched_name.casefold() in name.replace(folder_path,'').casefold():
+                found_objects.append({  'obj': name
+                                      , 'name': Path(obj['Key']).stem
+                                      , 'type': Path(obj['Key']).suffix[1:]
+                                      , 'size': obj['Size']
+                                      , 'isdir': obj['Size'] == 0
+                                      , 'modified': obj['LastModified']
+                                      , 'user': dal_wasabi.get_tag(self.s3, bucket_name=self.bucket_root, file_path=obj['Key'], tag_key_to_query='username') if obj['Size'] > 0 else ''
+                                      , 'system': name in diretorios_sistema  
+                                      })
+
+        #for l in found_objects:
+        #    l['user'] = dal_wasabi.get_tag(self.s3, bucket_name=self.bucket_root, file_path=l['obj'], tag_key_to_query='username') if not l['isdir'] else ''
+        #    l['obj'] = l['obj'].replace(ensure_folder_ends(self.root),'')
+        #    l['system'] = l['obj'] in diretorios_sistema        
+
+        # e mergulha nos subdiretorios (recursivo)
+        #for obj in objects.get('Contents',list()):
+        #    # se for diretorio, mergulha !
+        #    if obj['Size'] == 0:
+        #        found_objects += self.find_file(folder_path=obj['key'], searched_name=searched_name)
+            
+        return found_objects
+        #return dal_wasabi.find_object(self.s3, bucket_name=self.bucket_root, bucket_dir=ensure_bucket_dir(self.root, subfolder_path), file_name=filename) 
 
     def create_s3_external_client(self, user_name:str):
         # Create the IAM user
@@ -241,7 +276,7 @@ class Wasabi(object):
             print(f"Error: {e}")
 
     def get_object(self, bucket_dir:str, file_name:str) -> dict:
-        return dal_wasabi.get_object(self.s3, bucket_name=self.bucket_root, bucket_dir=ensure_bucket_dir(self.root,bucket_dir), filename=file_name)
+        return dal_wasabi.get_object(self.s3, bucket_name=self.bucket_root, bucket_dir=ensure_bucket_dir(self.root,bucket_dir), file_name=file_name)
     
     def put_object(self, bucket_dir:str, obj_name:str, obj_data:any, user:str=None) -> dict:
         resp = dal_wasabi.put_object(self.s3, bucket_name=self.bucket_root, key_name=f"{ensure_bucket_dir(self.root,bucket_dir)}{obj_name}", body=obj_data)

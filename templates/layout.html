@@ -16,6 +16,9 @@
 -->
     {{ fontawesome_html() }}
 
+  </body>
+  
+  </html>
     <title>Link Drive</title>
 </head>
 
@@ -64,31 +67,36 @@
     document.getElementById('form-upload').style.display="flex";
   });
 
+  $("#show-form-search").click(function(){
+    document.getElementById('show-form-search').style.display="none";
+    document.getElementById('form-search').style.display="flex";
+  });
+
 </script>
 
 
 <script>
-$('.sort_order').click(function () {
-        const Http = new XMLHttpRequest();
-        const url='/changeSort?col=' + this.getAttribute("name");
-        Http.open("GET", url, false);
-        Http.send();
-        window.location.reload();
-});
+  $('.sort_order').click(function () {
+    const Http = new XMLHttpRequest();
+    const url='/changeSort?col=' + this.getAttribute("name");
+    Http.open("GET", url, false);
+    Http.send();
+    window.location.reload();
+  });
 </script>
 
 <script>
-var confirmationModal = document.getElementById('confirmationModal');
-confirmationModal.addEventListener('show.bs.modal', function (event) {
-  // Button that triggered the modal
-  var button = event.relatedTarget;
-  // Extract info from data-bs-* attributes
-  var pergunta = button.getAttribute('data-bs-pergunta');
-  var modalBody = confirmationModal.querySelector('.modal-body');
-  modalBody.textContent = pergunta;
-  var modalSim = document.getElementById('modalSimBtn');
-  modalSim.setAttribute("href", button.getAttribute('data-bs-href'));
-})
+  var confirmationModal = document.getElementById('confirmationModal');
+  confirmationModal.addEventListener('show.bs.modal', function (event) {
+    // Button that triggered the modal
+    var button = event.relatedTarget;
+    // Extract info from data-bs-* attributes
+    var pergunta = button.getAttribute('data-bs-pergunta');
+    var modalBody = confirmationModal.querySelector('.modal-body');
+    modalBody.textContent = pergunta;
+    var modalSim = document.getElementById('modalSimBtn');
+    modalSim.setAttribute("href", button.getAttribute('data-bs-href'));
+  })
 </script>
 
 <script>
@@ -100,33 +108,41 @@ confirmationModal.addEventListener('show.bs.modal', function (event) {
     });
 </script>
 
+
 <script>
-      function trocanome(event) {
-        event.preventDefault(); // Prevent the default anchor click behavior
-        //var modalTrocaBtn = document.getElementById('modalTrocaBtn');
-        var href = document.getElementById('modalTrocaBtn').getAttribute("data-bs-href");
-        var novonome = document.getElementById('modalInputField').value;
-        const Http = new XMLHttpRequest();
-        //const url= href + novonome;
-        Http.open("GET", href + novonome, false);
-        Http.onload = function() {
-            if (Http.status >= 200 && Http.status < 300) {
-                if (Http.responseText == "NOK") {alert("Nome não foi trocado !")};
-                console.log('Response:', Http.responseText);
-            } else {
-                // Handle error
-                console.error('Error:', Http.statusText);
-            }
-        };
-        // Handle network errors
-        Http.onerror = function() {
-            console.error('Request failed');
-        };
-        Http.send();
-        window.location.reload();
+  function trocanome(event) {
+    event.preventDefault(); // Prevent the default anchor click behavior
+    //var modalTrocaBtn = document.getElementById('modalTrocaBtn');
+    var href = document.getElementById('modalTrocaBtn').getAttribute("data-bs-href");
+    var novonome = document.getElementById('modalInputField').value;
+    const Http = new XMLHttpRequest();
+    //const url= href + novonome;
+    Http.open("GET", href + novonome, false);
+    Http.onload = function() {
+      if (Http.status >= 200 && Http.status < 300) {
+        if (Http.responseText == "NOK") {alert("Nome não foi trocado !")};
+        console.log('Response:', Http.responseText);
+      } else {
+        // Handle error
+        console.error('Error:', Http.statusText);
+      }
     };
-  </script>
+    // Handle network errors
+    Http.onerror = function() {
+      console.error('Request failed');
+    };
+    Http.send();
+    window.location.reload();
+  };
+</script>
   
+<script>
+    function showfileModal_hide(event) {
+//      event.preventDefault();
+      var showfileModal = document.getElementById('showfileModal');
+      showfileModal.style.display = 'none';
+    };
+</script>
 
 <script>
   function allowDrop(ev) {
@@ -173,27 +189,67 @@ confirmationModal.addEventListener('show.bs.modal', function (event) {
 </script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-  const myInput = document.getElementById('myInput');
-  const copyButton = document.getElementById('copyButton');
-  const copyIcon = copyButton.querySelector('.fa-copy'); // Assuming Bootstrap Icons
-
-  copyButton.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(myInput.value);
-      // Optional: Change icon or show message for feedback
-      copyIcon.classList.remove('fa-copy');
-      copyIcon.classList.add('fa-check'); // Change to a checkmark icon
-      setTimeout(() => {
-        copyIcon.classList.remove('fa-check');
-        copyIcon.classList.add('fa-copy'); // Revert to clipboard icon
-      }, 2000); // Revert after 2 seconds
-    } catch (err) {
-      console.error('Copia falhou: ', err);
-      // Handle error, e.g., show an alert
-    }
+  document.addEventListener('DOMContentLoaded', function () {
+      const showfilemodal = document.getElementById('showfileModal');
+      // Close the modal when clicking outside of the modal content
+      //window.onclick = function(event) {
+      //    if (event.target === showfilemodal) {
+      //        showfilemodal.style.display = 'none'; // Hide the modal
+      //    }
+      //};
   });
-});
+  function handleDoubleClick(event, mediatype) {
+    console.log(mediatype);
+    const imageUrl = '/browse/' + event.target.getAttribute("obj");
+    if (mediatype === 'image') {
+      fetch(imageUrl)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.arrayBuffer(); // Get the response as an ArrayBuffer
+          })
+          .then(buffer => {
+              // Convert the ArrayBuffer to a Uint8Array
+              const bytes = new Uint8Array(buffer);
+              // Convert bytes to a base64 string
+              const binaryString = bytes.reduce((data, byte) => data + String.fromCharCode(byte), '');
+              const base64String = btoa(binaryString); // Convert to base64
+              // Set the src of the image
+              const imageDisplay = document.getElementById('showfileImage');
+              imageDisplay.src = `data:image/jpeg;base64,${base64String}`; // Use the appropriate MIME type
+              const showfilemodal = document.getElementById('showfileModal');
+              showfilemodal.style.display = 'block';
+          })
+          .catch(error => {
+              console.error('Error fetching the image:', error);
+          });
+    };
+  };
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const myInput = document.getElementById('myInput');
+    const copyButton = document.getElementById('copyButton');
+    const copyIcon = copyButton.querySelector('.fa-copy'); // Assuming Bootstrap Icons
+
+    copyButton.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(myInput.value);
+        // Optional: Change icon or show message for feedback
+        copyIcon.classList.remove('fa-copy');
+        copyIcon.classList.add('fa-check'); // Change to a checkmark icon
+        setTimeout(() => {
+          copyIcon.classList.remove('fa-check');
+          copyIcon.classList.add('fa-copy'); // Revert to clipboard icon
+        }, 2000); // Revert after 2 seconds
+      } catch (err) {
+        console.error('Copia falhou: ', err);
+        // Handle error, e.g., show an alert
+      }
+    });
+  });
 </script>
 
 </body>

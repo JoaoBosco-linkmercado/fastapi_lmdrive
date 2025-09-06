@@ -38,9 +38,9 @@ def attach_user_policy(iam_client:boto3.client, user_name:str, policy_arn) -> No
     return iam_client.attach_user_policy(UserName=user_name, PolicyArn=policy_arn)
 
 
-def get_object(s3_client:boto3.client, bucket_name:str, bucket_dir, filename) -> dict:
+def get_object(s3_client:boto3.client, bucket_name:str, bucket_dir:str, file_name:str) -> dict:
     try:
-        return s3_client.get_object(Bucket=bucket_name, Key=bucket_dir + filename)
+        return s3_client.get_object(Bucket=bucket_name, Key=bucket_dir + file_name)
     except:
         return None
 
@@ -54,6 +54,36 @@ def put_object(s3_client:boto3.client, bucket_name:str, key_name:str, body:any=N
 
 def delete_object(s3_client:boto3.client, bucket_name:str, key_name:str) -> dict:
     return s3_client.delete_object(Bucket=bucket_name, Key=key_name)
+
+
+def find_object(s3_client:boto3.client, bucket_name:str, bucket_dir:str, file_name:str) -> list:
+    continuation_token = None
+    found_files = list()
+
+    while True:
+        # Lista os objetos no bucket, com paginação se necessário
+        list_params = {'Bucket': bucket_name}
+        if continuation_token:
+            list_params['ContinuationToken'] = continuation_token
+        
+        response = s3_client.list_objects_v2(**list_params)
+
+        # Verifica se há objetos no bucket
+        if 'Contents' not in response:
+            return list()
+
+        # Itera sobre os objetos no bucket
+        for obj in response['Contents']:
+            # Verifica se o nome do arquivo está presente na chave do objeto e num diretório abaixo do bucket_dir
+            if bucket_dir in obj['Key'] and file_name in obj['Key']:
+                found_files.append({ 'obj':obj['Key'], 'name':Path(obj['Key']).stem, 'type':Path(obj['Key']).suffix[1:], 'size':obj['Size'], 'isdir':False, 'modified':obj['LastModified']})
+        # Verifica se há mais objetos a serem listados (paginação)
+        if response.get('IsTruncated'):  # Se a resposta foi truncada, há mais objetos
+            continuation_token = response['NextContinuationToken']
+        else:
+            break  # Se não há mais objetos, sai do loop
+
+    return found_files
 
 
 def delete_objects(s3_client:boto3.client, bucket_name:str, del_objects) -> dict:
@@ -85,6 +115,37 @@ def upload_file(s3_client:boto3.client, bucket_name, bucket_dir, file_dir, filen
     s3_client.upload_file(Filename=file_dir + filename,Bucket=bucket_name,Key=bucket_dir + filename)
     #with open(file_dir + filename, "rb") as f:
     #    s3_client.upload_fileobj(f, bucket_name, bucket_dir + filename)
+
+
+def upload_largefile(s3_client:boto3.client, bucket_name, bucket_dir, file_dir, filename) -> None:
+    upload_id = 'Teste'
+    part_size = 1024 * 1024 * 5  # 5 MB part size
+    file_path = file_dir + filename
+    parts = []
+
+    with open(file_path, 'rb') as f:
+        part_number = 1
+        while True:
+            data = f.read(part_size)
+            if not data:
+                break  # End of file
+
+            response = s3_client.upload_part(
+                Bucket=bucket_name,
+                Key=bucket_dir + filename,
+                PartNumber=part_number,
+                UploadId=upload_id,
+                Body=data
+            )
+            parts.append({'PartNumber': part_number, 'ETag': response['ETag']})
+            part_number += 1
+    s3_client.complete_multipart_upload(
+        Bucket=bucket_name,
+        Key=bucket_dir + filename,
+        UploadId=upload_id,
+        MultipartUpload={'Parts': parts}
+    )
+    s3_client.abort_multipart_upload(Bucket=bucket_name, Key=bucket_dir + filename, UploadId=upload_id)
 
 
 def list_objects(s3_client:boto3.client, bucket_name:str, root:str, folder_name:str='/') -> list:
