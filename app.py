@@ -200,7 +200,7 @@ def loginPost(var=""):
             session['sort_by_selected'] = 0
             session['sort_order'] = 0
             _wasabi = ctl_wasabi.Wasabi(session['login'])
-            _wasabi.initializa_folder() 
+            _wasabi.initialize_folder() 
             return redirect('/files/')
     except:
         pass

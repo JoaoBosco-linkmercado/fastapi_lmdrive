@@ -48,21 +48,22 @@ class Wasabi(object):
         self.iam = IAM
         self.s3 = S3
         
-    def initializa_folder(self):  
+    def initialize_folder(self):  
         if self.root:
             # certifica que folder root existe
             dirlist = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root)
             if not dirlist:
                 dal_wasabi.put_object(self.s3, bucket_name=self.bucket_root, key_name=self.root_dir)
-                if '/Materiais_do_Cliente/' not in self.root_dir:
-                    self.create_folder('Materiais_do_Cliente/')
-                    self.create_folder('Materiais_do_Cliente/Fotos/')
-                    self.create_folder('Materiais_do_Cliente/Vídeos/')
-                    self.create_folder('Materiais_do_Cliente/Outros/')
-                if '/Produção_da_Agência/' not in self.root_dir:
-                    self.create_folder('Produção_da_Agência/')
-                if '/Área_do_Cliente/' not in self.root_dir:
-                    self.create_folder('Área_do_Cliente/')
+                if not self.root.startswith('prj-'):
+                    if '/Materiais_do_Cliente/' not in self.root_dir:
+                        self.create_folder('Materiais_do_Cliente/')
+                        self.create_folder('Materiais_do_Cliente/Fotos/')
+                        self.create_folder('Materiais_do_Cliente/Vídeos/')
+                        self.create_folder('Materiais_do_Cliente/Outros/')
+                    if '/Produção_da_Agência/' not in self.root_dir:
+                        self.create_folder('Produção_da_Agência/')
+                    if '/Área_do_Cliente/' not in self.root_dir:
+                        self.create_folder('Área_do_Cliente/')
                     
     def list_folder(self, folder_name:str) -> list:
         lista = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root, folder_name=ensure_folder_ends(folder_name))
