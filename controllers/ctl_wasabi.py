@@ -54,7 +54,7 @@ class Wasabi(object):
             dirlist = dal_wasabi.list_folder_contents(self.s3, bucket_name=self.bucket_root, root=self.root)
             if not dirlist:
                 dal_wasabi.put_object(self.s3, bucket_name=self.bucket_root, key_name=self.root_dir)
-                if not self.root.startswith('prj-'):
+                if not self.root.startswith('fileshare-'):
                     if '/Materiais_do_Cliente/' not in self.root_dir:
                         self.create_folder('Materiais_do_Cliente/')
                         self.create_folder('Materiais_do_Cliente/Fotos/')
