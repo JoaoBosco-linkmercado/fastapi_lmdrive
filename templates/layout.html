@@ -26,7 +26,7 @@
   <header class="bg-primary text-white text-center p-3">
     <div class="d-flex justify-content-between align-items-center" style="gap: 10px">
       <h1 class="text-center flex-grow-1">{{header}}</h1>
-      {% if internal_user == 'Y' %}
+      {% if gera_external_link == 'Y' %}
       <a type="sumbit" class="btn btn-info" href="/external_use/" data-bs-toggle="tooltip" title="gerar link cliente"><i class="fa fa-key"></i></a>
       {% endif %}
       <a type="sumbit" class="btn btn-warning" href="/logout/" data-bs-toggle="tooltip" title="sair"><i class="fa fa-close"></i></a>

@@ -169,7 +169,7 @@ def make_session_permanent():
     global first_request
     if first_request:
         session.permanent = True
-        app.permanent_session_lifetime = timedelta(hours=8)
+        app.permanent_session_lifetime = timedelta(hours=12)
         first_request = False
 
 
@@ -197,6 +197,7 @@ def loginPost(var=""):
             session['title'] = cmd[1]
             session['user'] = cmd[2]
             session['internal'] = cmd[3] if len(cmd) > 3 else 'Y'
+            session['external_link'] = cmd[4] if len(cmd) > 4 else session['internal']
             session['sort_by_selected'] = 0
             session['sort_order'] = 0
             _wasabi = ctl_wasabi.Wasabi(session['login'])
@@ -208,6 +209,7 @@ def loginPost(var=""):
     session.pop('title', None)
     session.pop('user', None)
     session.pop('internal', None)
+    session.pop('external_link', None)
     session.pop('sort_by_selected', None)
     session.pop('sort_order', None)
     return render_template('blank.html')
@@ -220,7 +222,7 @@ def external_use():
     key = b'5AqqPMvoZtFDilcrGCA3cIUpn10KGEBlQOcK27XD21o='
     f = Fernet(key)
     token = f.encrypt(f"LMDRIVE:{session['login']}/Área_do_Cliente|{session['title']}|:{session['user']}|N".encode('utf-8')).decode('utf-8')
-    return render_template('external_link.html', internal_user=session['internal'], header=session['title'], external_link=f'https://drive.linkmercado.com.br/login/{token}')
+    return render_template('external_link.html', internal_user=session['internal'], gera_external_link=session['external_link'], header=session['title'], external_link=f'https://drive.linkmercado.com.br/login/{token}')
 
 
 @app.route('/logout/')
@@ -309,7 +311,7 @@ def filePage(var=""):
     for c in cList:
         cPath += f"{c}/"
         breadcrumb.append(["/files/" + cPath, c, cPath])
-    return render_template('home.html', homepage='Y', internal_user=session['internal'], header=session['title'], currentDir=var, breadcrumb=breadcrumb, all_dir=dir_content)
+    return render_template('home.html', homepage='Y', internal_user=session['internal'], gera_external_link=session['external_link'], header=session['title'], currentDir=var, breadcrumb=breadcrumb, all_dir=dir_content)
 
 
 @app.route('/find/', methods=['POST'])
@@ -420,7 +422,7 @@ def uploadFile(var=""):
                 files_ok.append(file.filename)
             else:
                 files_nok.append(file.filename)
-    return render_template('uploadsuccess.html', internal_user=session['internal'], header=session['title'], fileOK=files_ok, fileNOK=files_nok, href=quote("/files/"+var))
+    return render_template('uploadsuccess.html', internal_user=session['internal'], gera_external_link=session['external_link'], header=session['title'], fileOK=files_ok, fileNOK=files_nok, href=quote("/files/"+var))
 
 
 @app.route('/create/', methods=['GET','POST'])
