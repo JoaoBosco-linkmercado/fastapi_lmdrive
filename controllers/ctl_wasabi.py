@@ -124,6 +124,26 @@ class Wasabi(object):
             recursive_folder_delete(objects, old_subfolder_path)
         return True
 
+    def size_folder(self, subfolder_path:str) -> list:
+        def folder_size(subfolder_path):
+            if [True for x in dir_size if subfolder_path == x['dir']] == [True]:
+                return
+            object_list = dal_wasabi.list_objects(self.s3, bucket_name=self.bucket_root, root=self.root_dir, folder_name=subfolder_path)
+            dirs, files, size = 0, 0, 0
+            for f in object_list['Contents']:
+                if f['Size'] != 0:
+                    size += f['Size']
+                    files += 1
+                else:
+                    if str(f['Key']) != subfolder_path:
+                        dirs += 1
+                        folder_size(str(f['Key']))    
+            dir_size.append( {'dir':subfolder_path, 'size':size, 'diretorios': dirs, 'arquivos': files})
+        dir_size = list()
+        folder_size(subfolder_path)
+        return dir_size
+
+
     def move_file(self, origin_subfolder_path:str, dest_subfolder_path:str, filename:str, override:bool=False) -> bool:
         if origin_subfolder_path != dest_subfolder_path:
             old_file = ensure_bucket_dir(self.root, origin_subfolder_path)+filename
@@ -296,3 +316,6 @@ class Wasabi(object):
 
     def delete_objects(self, key_names):
         dal_wasabi.delete_objects(self.s3, bucket_name=self.bucket_root, Delete={'Objects': key_names})
+
+#wb = Wasabi()
+#print(wb.size_folder(''))
