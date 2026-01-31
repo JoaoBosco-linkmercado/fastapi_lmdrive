@@ -45,8 +45,8 @@ from controllers import ctl_wasabi
 # ------------------------------------------------------------------------------
 SESSION_SECRET = os.getenv("SESSION_SECRET", "LM Wasabi Drive versão 1")
 
-# Your Flask app had MAX_CONTENT_LENGTH = 2GB.
-MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(2 * 1024 * 1024 * 1024)))
+# Your Flask app had MAX_CONTENT_LENGTH = 500MB.
+MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(500 * 1024 * 1024)))
 
 TEMPLATE_DIR = os.getenv("TEMPLATE_DIR", "templates")
 
@@ -55,6 +55,18 @@ SESSION_MAX_AGE = int(os.getenv("SESSION_MAX_AGE", str(int(timedelta(hours=12).t
 
 maxFileNameLength = 64
 
+BLOCKED_EXTENSIONS = {
+    ".exe", ".bat", ".cmd", ".com", ".msi",
+    ".sh", ".bash", ".run", ".appimage",
+    ".jar", ".ps1",
+    ".vbs", ".js", ".jse",
+    ".dll", ".so",
+    ".bin"
+}
+
+def is_executable(filename: str) -> bool:
+    ext = Path(filename).suffix.lower()
+    return ext in BLOCKED_EXTENSIONS
 
 # ------------------------------------------------------------------------------
 # Middleware: basic request size guard (Content-Length based)
@@ -73,12 +85,9 @@ class MaxBodySizeMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
-    print("IN")
     #await carrega_globais(app)
     yield
     #await connect_db.disconnect()
-    print("OUT")
 
 
 # ------------------------------------------------------------------------------
@@ -110,8 +119,8 @@ tp_dict = {
     "ppt": [["ppt", "pptx", "odp"], "fa fa-file-powerpoint"],
     "doc": [["docx", "doc", "odt"], "fa fa-file-word"],
     "excel": [["xls", "xlsx", "ods"], "fa fa-file-excel"],
-    "text": [["txt", "rtf", "csv", "log", "xml", "md"], "fa fa-file-text"],
-    "compressed": [["zip", "rar", "7z"], "fa fa-file-zip"],
+    "text": [["txt", "rtf", "csv", "log", "xml", "md"], "fa fa-file-alt"],
+    "compressed": [["zip", "rar", "7z"], "fa a-file-alt"],
     "code": [["css", "scss", "html", "py", "js", "cpp"], "fa fa-file-code"],
 }
 
@@ -282,8 +291,8 @@ async def login_method(var: str = ""):
 
 @app.get("/login/{var:path}", response_class=HTMLResponse)
 async def login_get(request: Request, var: str):
-    if not var:
-        var = "gAAAAABpe7I_Hm7fpMWCi0xXWulW3bcZzs4DyIB2eIrag-zDx48uyHWfXWt75qdyiqD11Upv7ENOxIUt4q7q1z1npa677QTT7tnkikNJoey-M0LtBTGNP5ZBIeZsRqCodKrvLCWkMipxi7yO2t2KSftZoyMC1Z_jZ47J7LtdjtT0hqGFmf8YFrImNuLao05yviXpVvocPal8"
+    #if not var:
+    #    var = "gAAAAABpe7I_Hm7fpMWCi0xXWulW3bcZzs4DyIB2eIrag-zDx48uyHWfXWt75qdyiqD11Upv7ENOxIUt4q7q1z1npa677QTT7tnkikNJoey-M0LtBTGNP5ZBIeZsRqCodKrvLCWkMipxi7yO2t2KSftZoyMC1Z_jZ47J7LtdjtT0hqGFmf8YFrImNuLao05yviXpVvocPal8"
     try:
         f = Fernet(config.app_key)
         connect_cmd = f.decrypt(var.encode("utf-8")).decode("utf-8")
@@ -650,6 +659,9 @@ async def api_upload_file(var: str = "", file: UploadFile = File(...), ctx: dict
     if not safe_name:
         return JSONResponse({"ok": False, "error": "Nome de arquivo inválido"}, status_code=400)
 
+    if is_executable(safe_name):
+        return JSONResponse({"ok": False, "error": "Nome de arquivo inválido"}, status_code=400)
+    
     wasabi = ctl_wasabi.Wasabi(ctx["login"])
 
     try:

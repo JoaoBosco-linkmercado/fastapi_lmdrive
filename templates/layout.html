@@ -22,7 +22,7 @@
               {% if gera_external_link == 'Y' %}
               <a class="btn btn-info" data-bs-toggle="tooltip" href="/external_use/" title="gerar link cliente" type="sumbit"><i class="fa fa-key"></i></a>
               {% endif %}
-              <a class="btn btn-warning" data-bs-toggle="tooltip" href="/logout/" title="sair" type="sumbit"><i class="fa fa-close"></i></a>
+              <a class="btn btn-warning" data-bs-toggle="tooltip" href="/logout/" title="sair" type="sumbit"><i class="fa fa-door-open"></i></a>
     </div>
   </header>
 
@@ -749,7 +749,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // PPT/PPTX -> PDF (backend)
-    if (mediatype === "ppt") {
+    if (mediatype === "ppt-fututo") {
       openModal("Apresentação");
       _previewShowLoading();
 
@@ -773,7 +773,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // fallback
-    alert("fallback");
     window.open(url, "_blank");
   }
 
