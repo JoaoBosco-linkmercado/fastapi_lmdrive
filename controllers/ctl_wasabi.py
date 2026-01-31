@@ -2,8 +2,8 @@ import json
 import os
 from pathlib import Path
 
-
 from dal import dal_wasabi
+import config
 
 def ensure_folder_ends(folder_name:str) -> str: 
        # Ensure the folder name ends with a '/'
@@ -15,19 +15,15 @@ def ensure_folder_ends(folder_name:str) -> str:
 def ensure_bucket_dir(parent_dir:str, folder_name:str) -> str:
     return f"{ensure_folder_ends(parent_dir)}{ensure_folder_ends(folder_name)}" if folder_name and folder_name != "/" else ensure_folder_ends(parent_dir)
 
-
-aws_access_key_id= "YN0X2VVQ3TGFJSSTECKF"
-aws_secret_access_key = "GYI3rWenpq7eL0UXJSuKaAyOcLfzBnehebINVP5Y"
-
 IAM = dal_wasabi.create_client('iam',
                 endpoint_url = 'https://iam.wasabisys.com',
-                access_key_id = aws_access_key_id,
-                secret_access_key = aws_secret_access_key)
+                access_key_id = config.aws_access_key_id,
+                secret_access_key = config.aws_secret_access_key)
 
 S3 = dal_wasabi.create_client('s3',
                 endpoint_url = 'https://s3.wasabisys.com',
-                access_key_id = aws_access_key_id,
-                secret_access_key = aws_secret_access_key)
+                access_key_id = config.aws_access_key_id,
+                secret_access_key = config.aws_secret_access_key)
 
 diretorios_sistema = ['Materiais_do_Cliente/',
                       'Materiais_do_Cliente/Fotos/',

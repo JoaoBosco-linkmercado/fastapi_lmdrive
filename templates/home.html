@@ -23,7 +23,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="confirmationModalLabel">Confirmação</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModal()"></button>
             </div>
             <div class="modal-body">
                 Confirma ?
@@ -58,15 +58,43 @@
          
 <!-- Modal showfile -->
 <div class="modal" id="showfileModal" tabindex="-1" aria-labelledby="showfileModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="pdfModalLabel">Imagem</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="showfileModal_hide()"></button>
+                <h5 class="modal-title" id="pdfModalLabel">Visualização</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModal()"></button>
             </div>
-            <div class="modal-body">
-                <img src="" class="showfileImage img-fluid" id="showfileImage" style="object-fit: contain; max-width: 100%; height: auto;">
+
+            <div class="modal-body" style="min-height: 60vh;">
+                <!-- Loading (ampulheta/spinner) -->
+                <div id="previewLoading" class="d-none text-center py-4">
+                    <div class="spinner-border" role="status" aria-hidden="true"></div>
+                    <div class="mt-2">Carregando…</div>
+                </div>
+                <!-- Imagem -->
+                <img id="showfileImage" class="img-fluid d-none"
+                    style="object-fit:contain; max-width:100%; height:auto;">
+
+                <!-- PDF -->
+                <iframe id="showfilePdf" class="d-none"
+                        style="width:100%; height:80vh; border:none;"></iframe>
+
+                <!-- Vídeo -->
+                <video id="showfileVideo" class="d-none" controls
+                        style="width:100%; max-height:80vh;"></video>
+
+                <!-- Áudio -->
+                <audio id="showfileAudio" class="d-none" controls style="width:100%;"></audio>
+
+                <!-- Texto -->
+                <pre id="showfileText" class="d-none"
+                    style="white-space:pre-wrap; word-break:break-word; margin:0;"></pre>
+
+                <!-- Office (docx/xlsx/pptx) -->
+                <div id="showfileOffice" class="d-none"></div>
+
             </div>
+
             <div class="modal-footer">
             </div>
         </div>
@@ -92,16 +120,25 @@
     <button id="show-form-upload" class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;" data-bs-toggle="tooltip" title="carregar arquivo"> 
         <i class="fa fa-upload"></i> Upload
     </button>
-    <form id="form-upload" action="/upload/{{currentDir}}" method="post" enctype="multipart/form-data" class="flex-row align-items-center" style="display: none;gap: 3px;">
-        <span>
-            <input class="form-control" type="file" id="formFile" name="files[]" multiple />
-        </span>
-        <span>
-            <button type="submit" class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;">
-                <i class="fa fa-check"></i> Carregar
+
+    <!-- Upload com progresso (XHR) -->
+    <div id="upload-panel" class="d-none w-100" style="max-width: 900px;">
+        <div class="d-flex flex-row flex-wrap align-items-center" style="gap: 8px;">
+            <label class="btn btn-outline-secondary mb-0" style="display:flex;gap:3px;align-items:center;">
+                <i class="fa fa-upload"></i> Selecionar arquivos
+                <input type="file" id="file-upload" class="d-none" multiple>
+            </label>
+            <button id="btn-upload-close" type="button" class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items:center;">
+                <i class="fa fa-times"></i> Fechar
             </button>
-        </span>
-    </form>
+        </div>
+
+        <!-- LISTA DE PROGRESSO -->
+        <div id="upload-list" class="pt-2 d-none"></div>
+        <div class="small text-muted pt-1">
+            Dica: você pode selecionar múltiplos arquivos; o progresso aparece por arquivo.
+        </div>
+    </div>
 
     <button id="show-form-search" class="btn btn-outline-secondary" style="display:flex;gap:3px;align-items: center;" data-bs-toggle="tooltip" title="procurar"> 
         <i class="fa fa-search"></i>Procurar
@@ -123,7 +160,8 @@
     {% else %}
     <h4>{{mensagem | safe}} </h4>
     {% endif %}
-    <table class="table align-middle table-nowrap table-hover mb-0"> <!-- style="min-height: 100px;"> -->
+
+    <table class="table align-middle table-nowrap table-hover mb-0">
         <thead class="table-light">
             <tr>
                 <th scope="col">
@@ -160,20 +198,27 @@
                     {% if dir_i.system %}
                     <i>
                     {% endif %}
+
                     {% if dir_i.isdir %}
                         <a href="/files/{{dir_i.f_url}}" class="text-dark fw-medium" obj="{{dir_i.f_url}}" ondrop="drop(event)" ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)">
-                                <i class="fa fa-folder font-size-16 align-middle text-primary me-2" obj="{{dir_i.f_url}}"></i>
-                                <span obj="{{dir_i.f_url}}"> 
-                                    <strong obj="{{dir_i.f_url}}">{{dir_i.f}}</strong> 
-                                </span>              
+                            <i class="fa fa-folder font-size-16 align-middle text-primary me-2" obj="{{dir_i.f_url}}"></i>
+                            <span obj="{{dir_i.f_url}}"> 
+                                <strong obj="{{dir_i.f_url}}">{{dir_i.f}}</strong> 
+                            </span>              
                         </a>
                     {% else %}
-                        <a class="text-dark fw-medium" obj="{{dir_i.f_url}}" draggable="true" ondragstart="drag(event)" data-bs-toggle="tooltip" title="{{dir_i.f_url}}" 
-                        ondblclick="handleDoubleClick(event, '{{dir_i.mediatype}}')" >
+                        <a class="text-dark fw-medium" 
+                            obj="{{dir_i.f_url}}" 
+                            draggable="true" 
+                            ondragstart="drag(event)" 
+                            data-bs-toggle="tooltip" 
+                            title="{{dir_i.f_url}}" 
+                            ondblclick="return handleDoubleClick(event, '{{dir_i.mediatype}}')" >
                             <i class="{{dir_i.icon}} font-size-16 align-middle text-primary me-2" obj="{{dir_i.f_url}}"></i>
                             {{dir_i.f}}
                         </a>
                     {% endif %}
+
                     {% if dir_i.system %}
                     </i>
                     {% endif %}
@@ -206,10 +251,9 @@
                                 Renomear
                             </button>
                             <a class="dropdown-item" href="/download/{{dir_i.f_url}}">Download</a>
-                            <!-- <a class="dropdown-item" href="#">Rename</> -->
                             <div class="dropdown-divider"></div>
                             <button type="button" style='{{"pointer-events: none" if dir_i.system}}' class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmationModal" data-bs-pergunta="Confirma a deleção do arquivo {{dir_i.f}} ?" data-bs-href="/delete/{{dir_i.f_url}}">
-                            Apagar
+                                Apagar
                             </button>
                         {% endif %}
                         </div>
@@ -221,6 +265,149 @@
     </table>
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const showBtn   = document.getElementById("show-form-upload");
+  const panel     = document.getElementById("upload-panel");
+  const closeBtn  = document.getElementById("btn-upload-close");
+  const uploadInp = document.getElementById("file-upload");
+  const uploadList = document.getElementById("upload-list");
+
+  const CURRENT_DIR = "{{ currentDir }}";
+  const UPLOAD_ENDPOINT = `/api/upload/${CURRENT_DIR}`;
+
+  function showPanel() {
+    if (!panel) return;
+    panel.classList.remove("d-none");
+    if (uploadList) {
+      uploadList.classList.add("d-none");
+      uploadList.innerHTML = "";
+    }
+  }
+
+  function hidePanel() {
+    if (panel) panel.classList.add("d-none");
+
+    if (uploadList) {
+      uploadList.classList.add("d-none");
+      uploadList.innerHTML = "";
+    }
+
+    if (uploadInp) uploadInp.value = "";
+
+    // GARANTIA: se algum JS externo esconder o botão Upload, reexibe aqui
+    if (showBtn) {
+      showBtn.classList.remove("d-none");
+      showBtn.style.display = "flex";
+      showBtn.style.visibility = "visible";
+      showBtn.disabled = false;
+    }
+  }
+
+  if (showBtn) showBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    showPanel();
+  });
+
+  if (closeBtn) closeBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    hidePanel();
+  });
+
+  function createUploadRow(filename) {
+    if (!uploadList) return null;
+
+    uploadList.classList.remove("d-none");
+
+    const row = document.createElement("div");
+    row.className = "mb-2";
+    row.innerHTML = `
+      <div class="small text-muted">${filename}</div>
+      <div class="progress">
+        <div class="progress-bar progress-bar-striped progress-bar-animated"
+             role="progressbar" style="width:0%">0%</div>
+      </div>
+    `;
+    uploadList.appendChild(row);
+    return row.querySelector(".progress-bar");
+  }
+
+  function uploadFile(file) {
+    const bar = createUploadRow(file.name);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", UPLOAD_ENDPOINT, true);
+
+    xhr.upload.onprogress = function(evt) {
+      if (!bar) return;
+      if (evt.lengthComputable) {
+        const pct = Math.round((evt.loaded / evt.total) * 100);
+        bar.style.width = pct + "%";
+        bar.textContent = pct + "%";
+      }
+    };
+
+    xhr.onload = function () {
+      if (!bar) return;
+
+      let ok = false;
+      try {
+        const resp = JSON.parse(xhr.responseText || "{}");
+        ok = !!resp.ok;
+      } catch (e) {}
+
+      if (xhr.status === 200 && ok) {
+        bar.classList.remove("bg-danger");
+        bar.classList.add("bg-success");
+        bar.textContent = "Concluído";
+        bar.style.width = "100%";
+      } else {
+        bar.classList.add("bg-danger");
+        bar.textContent = "Erro";
+      }
+    };
+
+    xhr.onerror = function () {
+      if (!bar) return;
+      bar.classList.add("bg-danger");
+      bar.textContent = "Erro";
+    };
+
+    xhr.send(formData);
+    return xhr;
+  }
+
+  function uploadAll(files) {
+    const list = Array.from(files || []);
+    if (list.length === 0) return;
+
+    let pending = list.length;
+
+    list.forEach(f => {
+      const xhr = uploadFile(f);
+      if (!xhr) return;
+
+      xhr.onloadend = function() {
+        pending -= 1;
+        if (pending <= 0) {
+          setTimeout(() => window.location.reload(), 700);
+        }
+      };
+    });
+  }
+
+  if (uploadInp) {
+    uploadInp.addEventListener("change", function () {
+      uploadAll(this.files);
+      this.value = "";
+    });
+  }
+});
+</script>
 
 {% endblock content %}
-

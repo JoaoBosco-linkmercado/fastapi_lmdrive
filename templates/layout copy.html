@@ -78,10 +78,6 @@ function closeModal() {
   const office = document.getElementById("showfileOffice");
   stopPreviewMedia();
   try { if (typeof hideLoading === "function") hideLoading(); } catch(e) {}
-  if (office?.dataset?.pptxBlobUrl) {
-    URL.revokeObjectURL(office.dataset.pptxBlobUrl);
-    delete office.dataset.pptxBlobUrl;
-  }
   const modal = document.getElementById("showfileModal");
   if (modal) modal.style.display = "none";
 }
@@ -400,23 +396,6 @@ function trocanome() {
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script src="https://cdn.jsdelivr.net/npm/docx-preview@0.1.15/dist/docx-preview.min.js"></script>
 <!-- Excel -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<!-- PPTXjs (meshesha) CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/css/pptxjs.css">
-
-<!-- (opcional) gráficos -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/css/nv.d3.min.css">
-
-<!-- Dependências do PPTXjs (meshesha) -->
-<script src="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/filereader.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/dingbat.js"></script>
-
-<!-- (opcional) gráficos -->
-<script src="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/nv.d3.min.js"></script>
-
-<!-- Plugin principal + slide mode -->
-<script src="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/pptxjs.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/meshesha/PPTXjs@master/js/divs2slides.js"></script>
 
 <script>
   function allowDrop(ev) {
@@ -748,33 +727,47 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // PPT/PPTX -> PDF (backend)
-    if (mediatype === "ppt") {
-      openModal("Apresentação");
-      _previewShowLoading();
-
-      // usa iframe de PDF do modal
-      if (!pdf) {
-        _previewHideLoading();
-        window.open(url, "_blank");
-        return false;
-      }
-
-      pdf.classList.remove("d-none");
-
-      // chama endpoint novo que converte e devolve PDF inline
-      const pdfUrl = "/pptpdf/" + obj;
-
-      pdf.onload = () => _previewHideLoading();
-      pdf.onerror = () => _previewHideLoading();
-
-      pdf.src = pdfUrl;
-      return false;
-    }
+   // PPT/PPTX (render no modal)
+  if (mediatype === "ppt") {
+    window.open(url, "_blank");
+    return false;
+  }
 
     // fallback
-    alert("fallback");
     window.open(url, "_blank");
+  }
+
+  function stopPreviewMedia() {
+    const vid = document.getElementById("showfileVideo");
+    const aud = document.getElementById("showfileAudio");
+
+    if (vid) {
+      vid.pause();
+      vid.removeAttribute("src"); // para streaming/requests
+      vid.load();
+    }
+
+    if (aud) {
+      aud.pause();
+      aud.removeAttribute("src");
+      aud.load();
+    }
+  }
+
+  function closeModalXXXX() {
+    stopPreviewMedia();
+    const modal = document.getElementById("showfileModal");
+    modal.style.display = "none";
+  }
+
+  const loading = document.getElementById("previewLoading");
+
+  function showLoading() {
+    if (loading) loading.classList.remove("d-none");
+  }
+
+  function hideLoading() {
+    if (loading) loading.classList.add("d-none");
   }
 
 </script>

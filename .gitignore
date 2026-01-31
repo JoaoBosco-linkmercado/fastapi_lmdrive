@@ -4,6 +4,7 @@ varlogapis*
 
 # ignore virtual env
 venv
+.venv
 
 # ignore old files
 *.old
@@ -13,3 +14,7 @@ venv
 
 # ignore all caches
 **/__pycache__
+
+
+# ignore all __init__.py
+**/__init__.py
