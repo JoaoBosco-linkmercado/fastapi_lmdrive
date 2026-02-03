@@ -1,5 +1,6 @@
 {% extends 'layout.html' %}
 {% block content %}
+
 <div class="table-responsive d-flex flex-row flex-wrap align-items-center">
     <div class="col-12 lead mt-4" style="text-align: left;">    
         <nav style="--bs-breadcrumb-divider: '&gt;';" aria-label="breadcrumb">
@@ -201,21 +202,21 @@
 
                     {% if dir_i.isdir %}
                         <a href="/files/{{dir_i.f_url}}" class="text-dark fw-medium" obj="{{dir_i.f_url}}" ondrop="drop(event)" ondragover="allowDrop(event)" draggable="true" ondragstart="drag(event)">
-                            <i class="fa fa-folder font-size-16 align-middle text-primary me-2" obj="{{dir_i.f_url}}"></i>
+                            <i class="fa fa-folder font-size-16 align-middle text-primary" obj="{{dir_i.f_url}}"></i>
                             <span obj="{{dir_i.f_url}}"> 
                                 <strong obj="{{dir_i.f_url}}">{{dir_i.f}}</strong> 
                             </span>              
                         </a>
                     {% else %}
-                        <a class="text-dark fw-medium" 
+                        <a class="text-dark fw-medium nounderline" 
                             obj="{{dir_i.f_url}}" 
                             draggable="true" 
                             ondragstart="drag(event)" 
                             data-bs-toggle="tooltip" 
-                            title="{{dir_i.f_url}}" 
+                            title="{{dir_i.f_url}}"
                             ondblclick="return handleDoubleClick(event, '{{dir_i.mediatype}}')" >
-                            <i class="{{dir_i.icon}} font-size-16 align-middle text-primary me-2" obj="{{dir_i.f_url}}"></i>
-                            {{dir_i.f}}
+                            <i class="{{dir_i.icon}} font-size-16 align-middle text-primary" obj="{{dir_i.f_url}}"></i>
+                            {{dir_i.f | trim}}
                         </a>
                     {% endif %}
 
